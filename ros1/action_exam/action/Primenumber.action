@@ -1,0 +1,5 @@
+int32 target
+---
+int32[] sequence
+---
+int32 cur_num
