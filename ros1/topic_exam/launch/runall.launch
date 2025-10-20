@@ -1,0 +1,6 @@
+<launch>
+    <node pkg="topic_exam" type="topic_exam_pub" name="my_topic_pub_1"/>
+    <node pkg="topic_exam" type="topic_exam_sub" name="my_topic_sub_1"/>
+    <node pkg="topic_exam" type="topic_exam_pub" name="my_topic_pub_2"/>
+    <node pkg="topic_exam" type="topic_exam_sub" name="my_topic_sub_2"/>
+</launch>

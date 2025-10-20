@@ -1,0 +1,25 @@
+<launch>
+  <group ns="plus">
+    <node pkg="service_exam2" type="service_exam_server2" name="plus_server" output="screen">
+      <param name="calculation_method" value="1"/> <!-- PLUS -->
+    </node>
+  </group>
+
+  <group ns="minus">
+    <node pkg="service_exam2" type="service_exam_server2" name="minus_server" output="screen">
+      <param name="calculation_method" value="2"/> <!-- MINUS -->
+    </node>
+  </group>
+
+  <group ns="multiplication">
+    <node pkg="service_exam2" type="service_exam_server2" name="multiplication_server" output="screen">
+      <param name="calculation_method" value="3"/> <!-- MULTIPLICATION -->
+    </node>
+  </group>
+
+  <group ns="division">
+    <node pkg="service_exam2" type="service_exam_server2" name="division_server" output="screen">
+      <param name="calculation_method" value="4"/> <!-- DIVISION -->
+    </node>
+  </group>
+</launch>
