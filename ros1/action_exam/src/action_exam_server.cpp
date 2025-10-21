@@ -21,43 +21,43 @@ public:
   }
 
   void executeCB(const action_exam::PrimenumberGoalConstPtr &goal)
-{
-  feedback_.cur_num = 0;
-  result_.sequence.clear();
-  ROS_INFO("We will find the prime number from 2 to 30");
-
-  bool success = true;
-  for (int i = 2; i <= 30; ++i)    {
-    if (as_.isPreemptRequested() || !ros::ok()){
-      ROS_INFO("%s: Preempted", action_name_.c_str());
-      as_.setPreempted();
-      success = false;
-      break;
-    }
-
-    bool isPrime = true;
-    for (int j = 2; j < i; ++j){
-      if (i % j == 0){
-        isPrime = false;
+  {
+    feedback_.cur_num = 0;
+    result_.sequence.clear();
+    ROS_INFO("We will find the prime number from 2 to 30");
+  
+    bool success = true;
+    for (int i = 2; i <= 30; ++i)    {
+      if (as_.isPreemptRequested() || !ros::ok()){
+        ROS_INFO("%s: Preempted", action_name_.c_str());
+        as_.setPreempted();
+        success = false;
         break;
       }
+  
+      bool isPrime = true;
+      for (int j = 2; j < i; ++j){
+        if (i % j == 0){
+          isPrime = false;
+          break;
+        }
+      }
+  
+      if (isPrime){
+        ROS_INFO("Find prime number : %d", i);
+        result_.sequence.push_back(i);
+        feedback_.cur_num = i;
+        as_.publishFeedback(feedback_);
+      }
+  
+      ros::Duration(0.1).sleep();
     }
-
-    if (isPrime){
-      ROS_INFO("Find prime number : %d", i);
-      result_.sequence.push_back(i);
-      feedback_.cur_num = i;
-      as_.publishFeedback(feedback_);
+  
+    if (success){
+      ROS_INFO("%s: Succeeded", action_name_.c_str());
+      as_.setSucceeded(result_);
     }
-
-    ros::Duration(0.1).sleep();
   }
-
-  if (success){
-    ROS_INFO("%s: Succeeded", action_name_.c_str());
-    as_.setSucceeded(result_);
-  }
-}
 };
 int main(int argc, char** argv)
 {
