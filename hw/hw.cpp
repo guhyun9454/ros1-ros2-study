@@ -332,9 +332,9 @@ private:
     Block object(0.05, 0.025, 0.06, 0.0, Location(0.40, -0.10));
     Slot slot(Location(0.15, 0.45), 0.0);
     double yaw = -M_PI / 4.0;
-    const double yaw_adjusted_pick = yaw + M_PI / 2.0;   // 집을 때 +90도
-    const double yaw_adjusted_place = yaw - M_PI / 2.0;  // 놓을 때 -90도 (시각적 기준 반대일 수 있음)
-    double grip_value = 0.022; // 얇은 두께(0.025m)에 맞춘 최종 갭 값
+    const double yaw_adjusted_pick = yaw + M_PI / 2.0;  
+    const double yaw_adjusted_place = yaw;  
+    double grip_value = 0.02;
     pick_object(node, arm_interface, gripper_interface, object, grip_value, yaw_adjusted_pick);
     place_object(node, arm_interface, gripper_interface, object, slot, yaw_adjusted_place);
   }
