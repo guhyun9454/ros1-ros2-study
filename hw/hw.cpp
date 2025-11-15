@@ -201,9 +201,15 @@ private:
                    moveit::planning_interface::MoveGroupInterface &gripper_interface,
                    const Block &object, double grip_value, double yaw)
   {
-    // 접근 자세: 물체 위 약 0.40 m
+    const double SAFE_Z = 0.40;
+    // 현재 자세
+    geometry_msgs::msg::Pose current_pose = arm_interface.getCurrentPose().pose;
+    geometry_msgs::msg::Pose lift_pose = current_pose;
+    lift_pose.position.z = SAFE_Z;
+
+    // 접근 자세: 물체 위 안전 높이
     geometry_msgs::msg::Pose above_pose =
-        list_to_pose(object.location.x, object.location.y, 0.40,
+        list_to_pose(object.location.x, object.location.y, SAFE_Z,
                      M_PI, 0.0, yaw);
 
     // grasp 자세: 물체 높이 + 엔드이펙터 오프셋 (0.185는 step1 예제와 동일)
@@ -212,39 +218,37 @@ private:
                      object.height + 0.185,
                      M_PI, 0.0, yaw);
 
-    std::vector<geometry_msgs::msg::Pose> waypoints1;
     std::vector<geometry_msgs::msg::Pose> waypoints2;
     std::vector<geometry_msgs::msg::Pose> waypoints3;
+    std::vector<geometry_msgs::msg::Pose> waypoints_up;
 
-    // 1) 위에서 접근 (장거리 이동은 조인트 플래닝 사용)
-    {
-      moveit::planning_interface::MoveGroupInterface::Plan plan_to_above;
-      arm_interface.setPoseTarget(above_pose);
-      auto planning_result = arm_interface.plan(plan_to_above);
-      bool success = (planning_result == moveit::planning_interface::MoveItErrorCode::SUCCESS);
-      if (success)
-      {
-        arm_interface.execute(plan_to_above);
-      }
-      else
-      {
-        RCLCPP_WARN(node->get_logger(), "Failed to plan to above_pose for pick.");
-      }
+    // 0) 수직 상승하여 안전 높이 도달
+    if (current_pose.position.z < SAFE_Z - 1e-3) {
+      waypoints_up.clear();
+      waypoints_up.push_back(lift_pose);
+      waypoint_sample(arm_interface, node, waypoints_up);
     }
+
+    // 1) 같은 Z에서 대상 위로 수평 이동 (카르테시안)
+    waypoints2.clear();
+    waypoints2.push_back(above_pose);
+    waypoint_sample(arm_interface, node, waypoints2);
 
     // 2) 그리퍼 열기
     open_gripper(gripper_interface);
 
     // 3) grasp_pose까지 내려가기
-    waypoints2.push_back(grasp_pose);
-    waypoint_sample(arm_interface, node, waypoints2);
+    waypoints3.clear();
+    waypoints3.push_back(grasp_pose);
+    waypoint_sample(arm_interface, node, waypoints3);
 
     // 4) 물체를 잡기
     close_gripper(gripper_interface, grip_value);
 
     // 5) 다시 위로 올라가기
-    waypoints3.push_back(above_pose);
-    waypoint_sample(arm_interface, node, waypoints3);
+    waypoints_up.clear();
+    waypoints_up.push_back(above_pose);
+    waypoint_sample(arm_interface, node, waypoints_up);
   }
 
   // 물체 내려놓기
@@ -255,9 +259,15 @@ private:
                     const Slot &slot,
                     double yaw)
   {
-    // 접근 자세
+    const double SAFE_Z = 0.40;
+    // 현재 자세
+    geometry_msgs::msg::Pose current_pose = arm_interface.getCurrentPose().pose;
+    geometry_msgs::msg::Pose lift_pose = current_pose;
+    lift_pose.position.z = SAFE_Z;
+
+    // 접근 자세 (슬롯 위 안전 높이)
     geometry_msgs::msg::Pose above_pose =
-        list_to_pose(slot.location.x, slot.location.y, 0.40,
+        list_to_pose(slot.location.x, slot.location.y, SAFE_Z,
                      M_PI, 0.0, yaw);
 
     // 실제 놓을 위치의 자세
@@ -269,22 +279,19 @@ private:
 
     std::vector<geometry_msgs::msg::Pose> waypoints1;
     std::vector<geometry_msgs::msg::Pose> waypoints2;
+    std::vector<geometry_msgs::msg::Pose> waypoints_up;
 
-    // 1) 슬롯 위로 이동 (조인트 플래닝)
-    {
-      moveit::planning_interface::MoveGroupInterface::Plan plan_to_above_slot;
-      arm_interface.setPoseTarget(above_pose);
-      auto planning_result = arm_interface.plan(plan_to_above_slot);
-      bool success = (planning_result == moveit::planning_interface::MoveItErrorCode::SUCCESS);
-      if (success)
-      {
-        arm_interface.execute(plan_to_above_slot);
-      }
-      else
-      {
-        RCLCPP_WARN(node->get_logger(), "Failed to plan to above slot pose.");
-      }
+    // 0) 수직 상승하여 안전 높이 도달
+    if (current_pose.position.z < SAFE_Z - 1e-3) {
+      waypoints_up.clear();
+      waypoints_up.push_back(lift_pose);
+      waypoint_sample(arm_interface, node, waypoints_up);
     }
+
+    // 1) 같은 Z에서 슬롯 위로 수평 이동 (카르테시안)
+    waypoints1.clear();
+    waypoints1.push_back(above_pose);
+    waypoint_sample(arm_interface, node, waypoints1);
     // 1-2) 슬롯 위에서 수직 하강 (카르테시안)
     waypoints1.clear();
     waypoints1.push_back(place_pose);
