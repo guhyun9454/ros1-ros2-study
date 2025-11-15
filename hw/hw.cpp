@@ -183,14 +183,14 @@ public:
     open_gripper(gripper);
 
     // 3) 각 블록별 함수 호출로 분리 (개별 함수 내부에서 파라미터 조정 가능)
-    // block1(node_ptr, arm, gripper);
-    // block2(node_ptr, arm, gripper);
-    // block3(node_ptr, arm, gripper);
-    // block4(node_ptr, arm, gripper);
-    // block5(node_ptr, arm, gripper);
-    // block6(node_ptr, arm, gripper);
+    block1(node_ptr, arm, gripper);
+    block2(node_ptr, arm, gripper);
+    block3(node_ptr, arm, gripper);
+    block4(node_ptr, arm, gripper);
+    block5(node_ptr, arm, gripper);
+    block6(node_ptr, arm, gripper);
     block7(node_ptr, arm, gripper);
-    // block8(node_ptr, arm, gripper);
+    block8(node_ptr, arm, gripper);
 
     RCLCPP_INFO(this->get_logger(), "Task finished.");
   }
@@ -399,8 +399,6 @@ private:
     pick_object_with_offset.location.x += 0.00625;
     pick_object(node, arm_interface, gripper_interface, pick_object_with_offset, grip_value, yaw);
     double yaw_adjusted_place = -M_PI / 4.0;
-    // pick에서 적용한 X 오프셋만큼 엔드이펙터 기준이 이동되어 있으므로
-    // 동일한 X 오프셋을 place 목표에도 적용하여 물체 중심이 슬롯 중심에 놓이도록 보정
     Slot place_slot = slot;
     place_slot.location.x += 0.00625;
     place_object(node, arm_interface, gripper_interface, object, place_slot, yaw_adjusted_place);
