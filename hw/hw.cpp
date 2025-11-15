@@ -347,7 +347,7 @@ private:
     Block object(0.05, 0.05, 0.08, 0.0, Location(0.50, 0.10));
     Slot slot(Location(0.05, 0.55), 0.0);
     double yaw = -M_PI / 4.0;
-    double grip_value = 0.0243;
+    double grip_value = 0.02;
     pick_object(node, arm_interface, gripper_interface, object, grip_value, yaw);
     place_object(node, arm_interface, gripper_interface, object, slot, yaw);
   }
@@ -360,7 +360,7 @@ private:
     Block object(0.05, 0.05, 0.06, 0.025, Location(0.50, 0.00));
     Slot slot(Location(-0.05, 0.45), 0.0);
     double yaw = 0.0;
-    double grip_value = 0.03;
+    double grip_value = 0.02;
     pick_object(node, arm_interface, gripper_interface, object, grip_value, yaw);
     place_object(node, arm_interface, gripper_interface, object, slot, yaw);
   }
@@ -373,7 +373,7 @@ private:
     Block object(0.05, 0.05, 0.07, 0.0, Location(0.50, -0.10));
     Slot slot(Location(-0.05, 0.55), 0.0);
     double yaw = -M_PI / 4.0;
-    double grip_value = 0.0243;
+    double grip_value = 0.02;
     pick_object(node, arm_interface, gripper_interface, object, grip_value, yaw);
     place_object(node, arm_interface, gripper_interface, object, slot, yaw);
   }
