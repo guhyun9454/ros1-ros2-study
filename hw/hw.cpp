@@ -261,9 +261,21 @@ private:
     std::vector<geometry_msgs::msg::Pose> waypoints2;
     std::vector<geometry_msgs::msg::Pose> waypoints3;
 
-    // 1) 위에서 접근
-    waypoints1.push_back(above_pose);
-    waypoint_sample(arm_interface, node, waypoints1);
+    // 1) 위에서 접근 (장거리 이동은 조인트 플래닝 사용)
+    {
+      moveit::planning_interface::MoveGroupInterface::Plan plan_to_above;
+      arm_interface.setPoseTarget(above_pose);
+      auto planning_result = arm_interface.plan(plan_to_above);
+      bool success = (planning_result == moveit::planning_interface::MoveItErrorCode::SUCCESS);
+      if (success)
+      {
+        arm_interface.execute(plan_to_above);
+      }
+      else
+      {
+        RCLCPP_WARN(node->get_logger(), "Failed to plan to above_pose for pick.");
+      }
+    }
 
     // 2) 그리퍼 열기
     open_gripper(gripper_interface);
@@ -303,8 +315,23 @@ private:
     std::vector<geometry_msgs::msg::Pose> waypoints1;
     std::vector<geometry_msgs::msg::Pose> waypoints2;
 
-    // 1) 슬롯 위로 이동 후 내려가기
-    waypoints1.push_back(above_pose);
+    // 1) 슬롯 위로 이동 (조인트 플래닝)
+    {
+      moveit::planning_interface::MoveGroupInterface::Plan plan_to_above_slot;
+      arm_interface.setPoseTarget(above_pose);
+      auto planning_result = arm_interface.plan(plan_to_above_slot);
+      bool success = (planning_result == moveit::planning_interface::MoveItErrorCode::SUCCESS);
+      if (success)
+      {
+        arm_interface.execute(plan_to_above_slot);
+      }
+      else
+      {
+        RCLCPP_WARN(node->get_logger(), "Failed to plan to above slot pose.");
+      }
+    }
+    // 1-2) 슬롯 위에서 수직 하강 (카르테시안)
+    waypoints1.clear();
     waypoints1.push_back(place_pose);
     waypoint_sample(arm_interface, node, waypoints1);
 
