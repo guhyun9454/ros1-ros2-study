@@ -294,10 +294,10 @@ private:
                      M_PI, 0.0, yaw);
 
     // 실제 놓을 위치의 자세
-    // slot.height는 case 바닥 기준 높이 (필요시 object.height/2 등을 더해서 조정)
+    // slot.height는 case 바닥 기준 높이. 오브젝트 높이를 포함해 판 위에 놓이도록 설정
     geometry_msgs::msg::Pose place_pose =
         list_to_pose(slot.location.x, slot.location.y,
-                     slot.height + 0.185,
+                     slot.height + object.height + 0.185,
                      M_PI, 0.0, yaw);
 
     std::vector<geometry_msgs::msg::Pose> waypoints1;
