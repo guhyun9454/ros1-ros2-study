@@ -394,11 +394,16 @@ private:
     Block object(0.05, 0.05, 0.06, 0.0, Location(0.60, 0.10));
     Slot slot(Location(0.05, 0.45), 0.0);
     double yaw = M_PI / 4.0;
-    double grip_value = 0.01;
+    double grip_value = 0.0175;
     Block pick_object_with_offset = object;
     pick_object_with_offset.location.x += 0.00625;
     pick_object(node, arm_interface, gripper_interface, pick_object_with_offset, grip_value, yaw);
-    place_object(node, arm_interface, gripper_interface, object, slot, yaw);
+    double yaw_adjusted_place = -M_PI / 4.0;
+    // pick에서 적용한 X 오프셋만큼 엔드이펙터 기준이 이동되어 있으므로
+    // 동일한 X 오프셋을 place 목표에도 적용하여 물체 중심이 슬롯 중심에 놓이도록 보정
+    Slot place_slot = slot;
+    place_slot.location.x += 0.00625;
+    place_object(node, arm_interface, gripper_interface, object, place_slot, yaw_adjusted_place);
   }
 
   // 블록 8: box6 (0.60, 0.00) 높이 0.09
