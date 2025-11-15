@@ -97,6 +97,7 @@ void open_gripper(moveit::planning_interface::MoveGroupInterface &gripper_interf
   if (success)
   {
     gripper_interface.execute(my_plan);
+    rclcpp::sleep_for(std::chrono::milliseconds(300));
   }
 }
 
@@ -182,14 +183,14 @@ public:
     open_gripper(gripper);
 
     // 3) 각 블록별 함수 호출로 분리 (개별 함수 내부에서 파라미터 조정 가능)
-    block1(node_ptr, arm, gripper);
-    block2(node_ptr, arm, gripper);
-    block3(node_ptr, arm, gripper);
-    block4(node_ptr, arm, gripper);
-    block5(node_ptr, arm, gripper);
-    block6(node_ptr, arm, gripper);
+    // block1(node_ptr, arm, gripper);
+    // block2(node_ptr, arm, gripper);
+    // block3(node_ptr, arm, gripper);
+    // block4(node_ptr, arm, gripper);
+    // block5(node_ptr, arm, gripper);
+    // block6(node_ptr, arm, gripper);
     block7(node_ptr, arm, gripper);
-    block8(node_ptr, arm, gripper);
+    // block8(node_ptr, arm, gripper);
 
     RCLCPP_INFO(this->get_logger(), "Task finished.");
   }
@@ -392,9 +393,11 @@ private:
   {
     Block object(0.05, 0.05, 0.06, 0.0, Location(0.60, 0.10));
     Slot slot(Location(0.05, 0.45), 0.0);
-    double yaw = -M_PI / 2.0;
-    double grip_value = 0.02;
-    pick_object(node, arm_interface, gripper_interface, object, grip_value, yaw);
+    double yaw = M_PI / 4.0;
+    double grip_value = 0.01;
+    Block pick_object_with_offset = object;
+    pick_object_with_offset.location.x += 0.00625;
+    pick_object(node, arm_interface, gripper_interface, pick_object_with_offset, grip_value, yaw);
     place_object(node, arm_interface, gripper_interface, object, slot, yaw);
   }
 
