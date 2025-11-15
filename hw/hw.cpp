@@ -181,60 +181,15 @@ public:
     close_gripper(gripper, 0.0);
     open_gripper(gripper);
 
-    // 3) 과제에서 사용할 Object와 Case 안의 목표 위치 정의
-    //    ★★ 과제 PPT에 나온 실제 좌표로 아래 값들을 반드시 수정할 것 ★★
-    std::vector<Block> objects;
-    // 개체 1~8: 실제 모델 크기(step2_hw_gazebo.launch.py)와 위치에 맞춤
-    // 1: box1 (0.4, 0.1)
-    objects.emplace_back(0.05, 0.05, 0.06, 0.0,   Location(0.40,  0.10));
-    // 2: box2 (0.4, 0.0)
-    objects.emplace_back(0.05, 0.05, 0.06, 0.0,   Location(0.40,  0.00));
-    // 3: box3 (0.4, -0.1) - 얇은 Y(0.025)
-    objects.emplace_back(0.05, 0.025, 0.06, 0.0,  Location(0.40, -0.10));
-    // 4: box5 (0.5, 0.1) - 높이 0.08
-    objects.emplace_back(0.05, 0.05, 0.08, 0.0,   Location(0.50,  0.10));
-    // 5: cylinder (0.5, 0.0) - radius 0.025, height 0.06
-    objects.emplace_back(0.05, 0.05, 0.06, 0.025, Location(0.50,  0.00));
-    // 6: box4 (0.5, -0.1) - 높이 0.07
-    objects.emplace_back(0.05, 0.05, 0.07, 0.0,   Location(0.50, -0.10));
-    // 7: triangle (0.6, 0.1) - 메쉬, 높이 0.06 가정
-    objects.emplace_back(0.05, 0.05, 0.06, 0.0,   Location(0.60,  0.10));
-    // 8: box6 (0.6, 0.0) - 높이 0.09
-    objects.emplace_back(0.05, 0.05, 0.09, 0.0,   Location(0.60,  0.00));
-
-    std::vector<Slot> slots;
-    // 목표 위치: 사용자 제공 좌표로 갱신
-    slots.emplace_back(Location(-0.15, 0.45), 0.0);  // target 1
-    slots.emplace_back(Location(-0.15, 0.55), 0.0);  // target 2
-    slots.emplace_back(Location( 0.15, 0.45), 0.0);  // target 3
-    slots.emplace_back(Location( 0.05, 0.55), 0.0);  // target 4
-    slots.emplace_back(Location(-0.05, 0.45), 0.0);  // target 5
-    slots.emplace_back(Location(-0.05, 0.55), 0.0);  // target 6
-    slots.emplace_back(Location( 0.05, 0.45), 0.0);  // target 7
-    slots.emplace_back(Location( 0.15, 0.55), 0.0);  // target 8
-
-    // 4) 각 Object를 차례로 집어서 Case 안에 배치
-    for (std::size_t i = 0; i < objects.size(); ++i)
-    {
-      double yaw = -M_PI / 4.0;   // 기본적으로 큐브에 사용하던 방향
-      double grip_value = 0.0243; // step1_practice에서 큐브에 사용하던 값
-
-      // cylinder, triangle은 yaw나 grip_value를 별도로 조정
-      if (i == 4) // cylinder (5번째)
-      {
-        yaw = 0.0;   // 필요시 조정
-        grip_value = 0.03;
-      }
-      else if (i == 6) // triangle (7번째)
-      {
-        // 삼각기둥은 영상과 실험을 통해 yaw, grip_value 튜닝 필수
-        yaw = -M_PI / 2.0;
-        grip_value = 0.02;
-      }
-
-      pick_object(node_ptr, arm, gripper, objects[i], grip_value, yaw);
-      place_object(node_ptr, arm, gripper, objects[i], slots[i], yaw);
-    }
+    // 3) 각 블록별 함수 호출로 분리 (개별 함수 내부에서 파라미터 조정 가능)
+    block1(node_ptr, arm, gripper);
+    block2(node_ptr, arm, gripper);
+    block3(node_ptr, arm, gripper);
+    block4(node_ptr, arm, gripper);
+    block5(node_ptr, arm, gripper);
+    block6(node_ptr, arm, gripper);
+    block7(node_ptr, arm, gripper);
+    block8(node_ptr, arm, gripper);
 
     RCLCPP_INFO(this->get_logger(), "Task finished.");
   }
@@ -341,6 +296,112 @@ private:
     // 3) 다시 위로 올라가기
     waypoints2.push_back(above_pose);
     waypoint_sample(arm_interface, node, waypoints2);
+  }
+
+  // 블록 1: box1 (0.40, 0.10)
+  void block1(const rclcpp::Node::SharedPtr &node,
+              moveit::planning_interface::MoveGroupInterface &arm_interface,
+              moveit::planning_interface::MoveGroupInterface &gripper_interface)
+  {
+    Block object(0.05, 0.05, 0.06, 0.0, Location(0.40, 0.10));
+    Slot slot(Location(-0.15, 0.45), 0.0);
+    double yaw = -M_PI / 4.0;
+    double grip_value = 0.02;
+    pick_object(node, arm_interface, gripper_interface, object, grip_value, yaw);
+    place_object(node, arm_interface, gripper_interface, object, slot, yaw);
+  }
+
+  // 블록 2: box2 (0.40, 0.00)
+  void block2(const rclcpp::Node::SharedPtr &node,
+              moveit::planning_interface::MoveGroupInterface &arm_interface,
+              moveit::planning_interface::MoveGroupInterface &gripper_interface)
+  {
+    Block object(0.05, 0.05, 0.06, 0.0, Location(0.40, 0.00));
+    Slot slot(Location(-0.15, 0.55), 0.0);
+    double yaw = -M_PI / 4.0;
+    double grip_value = 0.02;
+    pick_object(node, arm_interface, gripper_interface, object, grip_value, yaw);
+    place_object(node, arm_interface, gripper_interface, object, slot, yaw);
+  }
+
+  // 블록 3: box3 (0.40, -0.10) 얇은 Y(0.025)
+  void block3(const rclcpp::Node::SharedPtr &node,
+              moveit::planning_interface::MoveGroupInterface &arm_interface,
+              moveit::planning_interface::MoveGroupInterface &gripper_interface)
+  {
+    Block object(0.05, 0.025, 0.06, 0.0, Location(0.40, -0.10));
+    Slot slot(Location(0.15, 0.45), 0.0);
+    double yaw = -M_PI / 4.0;
+    const double yaw_adjusted_pick = yaw + M_PI / 2.0;   // 집을 때 +90도
+    const double yaw_adjusted_place = yaw - M_PI / 2.0;  // 놓을 때 -90도 (시각적 기준 반대일 수 있음)
+    double grip_value = 0.022; // 얇은 두께(0.025m)에 맞춘 최종 갭 값
+    pick_object(node, arm_interface, gripper_interface, object, grip_value, yaw_adjusted_pick);
+    place_object(node, arm_interface, gripper_interface, object, slot, yaw_adjusted_place);
+  }
+
+  // 블록 4: box5 (0.50, 0.10) 높이 0.08
+  void block4(const rclcpp::Node::SharedPtr &node,
+              moveit::planning_interface::MoveGroupInterface &arm_interface,
+              moveit::planning_interface::MoveGroupInterface &gripper_interface)
+  {
+    Block object(0.05, 0.05, 0.08, 0.0, Location(0.50, 0.10));
+    Slot slot(Location(0.05, 0.55), 0.0);
+    double yaw = -M_PI / 4.0;
+    double grip_value = 0.0243;
+    pick_object(node, arm_interface, gripper_interface, object, grip_value, yaw);
+    place_object(node, arm_interface, gripper_interface, object, slot, yaw);
+  }
+
+  // 블록 5: cylinder (0.50, 0.00) r=0.025, h=0.06
+  void block5(const rclcpp::Node::SharedPtr &node,
+              moveit::planning_interface::MoveGroupInterface &arm_interface,
+              moveit::planning_interface::MoveGroupInterface &gripper_interface)
+  {
+    Block object(0.05, 0.05, 0.06, 0.025, Location(0.50, 0.00));
+    Slot slot(Location(-0.05, 0.45), 0.0);
+    double yaw = 0.0;
+    double grip_value = 0.03;
+    pick_object(node, arm_interface, gripper_interface, object, grip_value, yaw);
+    place_object(node, arm_interface, gripper_interface, object, slot, yaw);
+  }
+
+  // 블록 6: box4 (0.50, -0.10) 높이 0.07
+  void block6(const rclcpp::Node::SharedPtr &node,
+              moveit::planning_interface::MoveGroupInterface &arm_interface,
+              moveit::planning_interface::MoveGroupInterface &gripper_interface)
+  {
+    Block object(0.05, 0.05, 0.07, 0.0, Location(0.50, -0.10));
+    Slot slot(Location(-0.05, 0.55), 0.0);
+    double yaw = -M_PI / 4.0;
+    double grip_value = 0.0243;
+    pick_object(node, arm_interface, gripper_interface, object, grip_value, yaw);
+    place_object(node, arm_interface, gripper_interface, object, slot, yaw);
+  }
+
+  // 블록 7: triangle (0.60, 0.10) 메쉬, 높이 0.06 가정
+  void block7(const rclcpp::Node::SharedPtr &node,
+              moveit::planning_interface::MoveGroupInterface &arm_interface,
+              moveit::planning_interface::MoveGroupInterface &gripper_interface)
+  {
+    Block object(0.05, 0.05, 0.06, 0.0, Location(0.60, 0.10));
+    Slot slot(Location(0.05, 0.45), 0.0);
+    double yaw = -M_PI / 2.0;
+    double grip_value = 0.02;
+    pick_object(node, arm_interface, gripper_interface, object, grip_value, yaw);
+    place_object(node, arm_interface, gripper_interface, object, slot, yaw);
+  }
+
+  // 블록 8: box6 (0.60, 0.00) 높이 0.09
+  void block8(const rclcpp::Node::SharedPtr &node,
+              moveit::planning_interface::MoveGroupInterface &arm_interface,
+              moveit::planning_interface::MoveGroupInterface &gripper_interface)
+  {
+    Block object(0.05, 0.05, 0.09, 0.0, Location(0.60, 0.00));
+    Slot slot(Location(0.15, 0.55), 0.0);
+    double yaw = -M_PI / 4.0;
+    double grip_value = 0.0243;
+    pick_object(node, arm_interface, gripper_interface, object, grip_value, yaw);
+    place_object(node, arm_interface, gripper_interface, object, slot, yaw);
   }
 };
 
