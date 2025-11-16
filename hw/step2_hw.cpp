@@ -67,7 +67,8 @@ geometry_msgs::msg::Pose list_to_pose(double x, double y, double z,
 // 카르테시안 경로(waypoint) 계산 및 실행
 void waypoint_sample(moveit::planning_interface::MoveGroupInterface &move_group_interface,
                      rclcpp::Node::SharedPtr node,
-                     const std::vector<geometry_msgs::msg::Pose> &waypoints)
+                     const std::vector<geometry_msgs::msg::Pose> &waypoints,
+                     double time_scale = 1.0)
 {
   auto logger = node->get_logger();
   RCLCPP_INFO(logger, "waypoint_sample");
@@ -79,6 +80,16 @@ void waypoint_sample(moveit::planning_interface::MoveGroupInterface &move_group_
 
   moveit::planning_interface::MoveGroupInterface::Plan cartesian_plan;
   cartesian_plan.trajectory_ = trajectory;
+  // 시간 스케일링 적용 (값이 1.0보다 크면 더 느려짐)
+  if (time_scale > 1.0) {
+    for (auto &pt : cartesian_plan.trajectory_.joint_trajectory.points) {
+      double t = static_cast<double>(pt.time_from_start.sec) +
+                 static_cast<double>(pt.time_from_start.nanosec) * 1e-9;
+      t *= time_scale;
+      pt.time_from_start.sec = static_cast<int32_t>(t);
+      pt.time_from_start.nanosec = static_cast<uint32_t>((t - static_cast<double>(pt.time_from_start.sec)) * 1e9);
+    }
+  }
   move_group_interface.execute(cartesian_plan);
 }
 
@@ -189,8 +200,8 @@ public:
     block4(node_ptr, arm, gripper);
     block5(node_ptr, arm, gripper);
     block6(node_ptr, arm, gripper);
-    block7(node_ptr, arm, gripper);
     block8(node_ptr, arm, gripper);
+    block7(node_ptr, arm, gripper);
 
     RCLCPP_INFO(this->get_logger(), "Task finished.");
   }
@@ -202,7 +213,7 @@ private:
                    moveit::planning_interface::MoveGroupInterface &gripper_interface,
                    const Block &object, double grip_value, double yaw)
   {
-    const double SAFE_Z = 0.40;
+    const double SAFE_Z = 0.5;
     // 현재 자세
     geometry_msgs::msg::Pose current_pose = arm_interface.getCurrentPose().pose;
     geometry_msgs::msg::Pose lift_pose = current_pose;
@@ -258,9 +269,11 @@ private:
                     moveit::planning_interface::MoveGroupInterface &gripper_interface,
                     const Block &object,
                     const Slot &slot,
-                    double yaw)
+                    double yaw,
+                    double descend_time_scale = 1.0,
+                    double place_z_offset = 0.0)
   {
-    const double SAFE_Z = 0.40;
+    const double SAFE_Z = 0.50;
     // 현재 자세
     geometry_msgs::msg::Pose current_pose = arm_interface.getCurrentPose().pose;
     geometry_msgs::msg::Pose lift_pose = current_pose;
@@ -275,7 +288,7 @@ private:
     // slot.height는 case 바닥 기준 높이. 오브젝트 높이를 포함해 판 위에 놓이도록 설정
     geometry_msgs::msg::Pose place_pose =
         list_to_pose(slot.location.x, slot.location.y,
-                     slot.height + object.height + 0.185,
+                     slot.height + object.height + 0.185 + place_z_offset,
                      M_PI, 0.0, yaw);
 
     std::vector<geometry_msgs::msg::Pose> waypoints1;
@@ -296,7 +309,7 @@ private:
     // 1-2) 슬롯 위에서 수직 하강 (카르테시안)
     waypoints1.clear();
     waypoints1.push_back(place_pose);
-    waypoint_sample(arm_interface, node, waypoints1);
+    waypoint_sample(arm_interface, node, waypoints1, descend_time_scale);
 
     // 2) 물체 내려놓기
     open_gripper(gripper_interface);
@@ -400,8 +413,8 @@ private:
     pick_object(node, arm_interface, gripper_interface, pick_object_with_offset, grip_value, yaw);
     double yaw_adjusted_place = -M_PI / 4.0;
     Slot place_slot = slot;
-    place_slot.location.x += 0.00625;
-    place_object(node, arm_interface, gripper_interface, object, place_slot, yaw_adjusted_place);
+    place_slot.location.y -= 0.00625;
+    place_object(node, arm_interface, gripper_interface, object, place_slot, yaw_adjusted_place, 5.0, 0.015);
   }
 
   // 블록 8: box6 (0.60, 0.00) 높이 0.09
