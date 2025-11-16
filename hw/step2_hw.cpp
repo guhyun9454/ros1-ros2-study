@@ -20,7 +20,6 @@
 #include <cmath>
 #include <iostream>
 
-// 2D 위치 표현용
 class Location {
 public:
   double x;
@@ -29,7 +28,6 @@ public:
   Location(double x_value, double y_value) : x(x_value), y(y_value) {}
 };
 
-// 오브젝트(큐브, 원기둥, 삼각기둥) 정보 표현용
 class Block {
 public:
   double width;
@@ -42,7 +40,6 @@ public:
     : width(width_value), length(length_value), height(height_value), radius(radius_value), location(location_value) {}
 };
 
-// case 안의 슬롯 정보 (위치 + 높이)
 struct Slot {
   Location location;
   double height;
@@ -50,7 +47,6 @@ struct Slot {
   Slot(const Location &loc, double h) : location(loc), height(h) {}
 };
 
-// RPY + xyz → Pose 변환
 geometry_msgs::msg::Pose list_to_pose(double x, double y, double z,
                                       double roll, double pitch, double yaw)
 {
@@ -64,7 +60,6 @@ geometry_msgs::msg::Pose list_to_pose(double x, double y, double z,
   return pose;
 }
 
-// 카르테시안 경로(waypoint) 계산 및 실행
 void waypoint_sample(moveit::planning_interface::MoveGroupInterface &move_group_interface,
                      rclcpp::Node::SharedPtr node,
                      const std::vector<geometry_msgs::msg::Pose> &waypoints,
@@ -80,7 +75,6 @@ void waypoint_sample(moveit::planning_interface::MoveGroupInterface &move_group_
 
   moveit::planning_interface::MoveGroupInterface::Plan cartesian_plan;
   cartesian_plan.trajectory_ = trajectory;
-  // 시간 스케일링 적용 (값이 1.0보다 크면 더 느려짐)
   if (time_scale > 1.0) {
     for (auto &pt : cartesian_plan.trajectory_.joint_trajectory.points) {
       double t = static_cast<double>(pt.time_from_start.sec) +
@@ -93,13 +87,12 @@ void waypoint_sample(moveit::planning_interface::MoveGroupInterface &move_group_
   move_group_interface.execute(cartesian_plan);
 }
 
-// 그리퍼 열기
 void open_gripper(moveit::planning_interface::MoveGroupInterface &gripper_interface)
 {
   RCLCPP_INFO(rclcpp::get_logger("gripper"), "Gripper opening...");
   moveit::planning_interface::MoveGroupInterface::Plan my_plan;
   std::vector<double> joint_group_positions = gripper_interface.getCurrentJointValues();
-  joint_group_positions[0] = 0.07; // 충분히 여는 값 (필요시 조정)
+  joint_group_positions[0] = 0.07;
   joint_group_positions[1] = 0.0;
   gripper_interface.setJointValueTarget(joint_group_positions);
 
@@ -112,13 +105,12 @@ void open_gripper(moveit::planning_interface::MoveGroupInterface &gripper_interf
   }
 }
 
-// 그리퍼 닫기 (value: grip 폭)
 void close_gripper(moveit::planning_interface::MoveGroupInterface &gripper_interface, double value)
 {
   RCLCPP_INFO(rclcpp::get_logger("gripper"), "Gripper closing...");
   moveit::planning_interface::MoveGroupInterface::Plan my_plan;
   std::vector<double> joint_group_positions = gripper_interface.getCurrentJointValues();
-  joint_group_positions[0] = value; // 과제에서 튜닝해야 하는 값
+  joint_group_positions[0] = value;
   joint_group_positions[1] = 0.0;
   gripper_interface.setJointValueTarget(joint_group_positions);
 
@@ -130,13 +122,11 @@ void close_gripper(moveit::planning_interface::MoveGroupInterface &gripper_inter
   }
 }
 
-// 초기 joint posture
 void initial_pose(moveit::planning_interface::MoveGroupInterface &arm_interface)
 {
   RCLCPP_INFO(rclcpp::get_logger("arm"), "Moving to initial pose...");
   moveit::planning_interface::MoveGroupInterface::Plan my_plan;
   std::vector<double> joint_group_positions = arm_interface.getCurrentJointValues();
-  // step1_practice.cpp 에서 사용하던 초기 자세
   joint_group_positions = {0.0, -2.03, 1.58, -1.19, -1.58, 0.78};
   arm_interface.setJointValueTarget(joint_group_positions);
 
@@ -148,7 +138,6 @@ void initial_pose(moveit::planning_interface::MoveGroupInterface &arm_interface)
   }
 }
 
-// 메인 노드
 class HomeworkPickAndPlaceNode : public rclcpp::Node
 {
 public:
@@ -169,7 +158,6 @@ public:
     arm.setPlanningTime(10.0);
     rclcpp::sleep_for(std::chrono::seconds(1));
 
-    // 1) ground plane 충돌 객체 추가 (step1_practice와 동일)
     moveit_msgs::msg::CollisionObject ground_plane;
     ground_plane.header.frame_id = arm.getPlanningFrame();
     ground_plane.id = "ground_plane";
@@ -188,12 +176,10 @@ public:
 
     planning_scene_interface.applyCollisionObjects({ground_plane});
 
-    // 2) 초기 자세 및 그리퍼 초기화
     initial_pose(arm);
     close_gripper(gripper, 0.0);
     open_gripper(gripper);
 
-    // 3) 각 블록별 함수 호출로 분리 (개별 함수 내부에서 파라미터 조정 가능)
     block1(node_ptr, arm, gripper);
     block2(node_ptr, arm, gripper);
     block3(node_ptr, arm, gripper);
@@ -207,24 +193,20 @@ public:
   }
 
 private:
-  // 물체 집기
   void pick_object(rclcpp::Node::SharedPtr node,
                    moveit::planning_interface::MoveGroupInterface &arm_interface,
                    moveit::planning_interface::MoveGroupInterface &gripper_interface,
                    const Block &object, double grip_value, double yaw)
   {
     const double SAFE_Z = 0.5;
-    // 현재 자세
     geometry_msgs::msg::Pose current_pose = arm_interface.getCurrentPose().pose;
     geometry_msgs::msg::Pose lift_pose = current_pose;
     lift_pose.position.z = SAFE_Z;
 
-    // 접근 자세: 물체 위 안전 높이
     geometry_msgs::msg::Pose above_pose =
         list_to_pose(object.location.x, object.location.y, SAFE_Z,
                      M_PI, 0.0, yaw);
 
-    // grasp 자세: 물체 높이 + 엔드이펙터 오프셋 (0.185는 step1 예제와 동일)
     geometry_msgs::msg::Pose grasp_pose =
         list_to_pose(object.location.x, object.location.y,
                      object.height + 0.185,
@@ -234,36 +216,29 @@ private:
     std::vector<geometry_msgs::msg::Pose> waypoints3;
     std::vector<geometry_msgs::msg::Pose> waypoints_up;
 
-    // 0) 수직 상승하여 안전 높이 도달
     if (current_pose.position.z < SAFE_Z - 1e-3) {
       waypoints_up.clear();
       waypoints_up.push_back(lift_pose);
       waypoint_sample(arm_interface, node, waypoints_up);
     }
 
-    // 1) 같은 Z에서 대상 위로 수평 이동 (카르테시안)
     waypoints2.clear();
     waypoints2.push_back(above_pose);
     waypoint_sample(arm_interface, node, waypoints2);
 
-    // 2) 그리퍼 열기
     open_gripper(gripper_interface);
 
-    // 3) grasp_pose까지 내려가기
     waypoints3.clear();
     waypoints3.push_back(grasp_pose);
     waypoint_sample(arm_interface, node, waypoints3);
 
-    // 4) 물체를 잡기
     close_gripper(gripper_interface, grip_value);
 
-    // 5) 다시 위로 올라가기
     waypoints_up.clear();
     waypoints_up.push_back(above_pose);
     waypoint_sample(arm_interface, node, waypoints_up);
   }
 
-  // 물체 내려놓기
   void place_object(rclcpp::Node::SharedPtr node,
                     moveit::planning_interface::MoveGroupInterface &arm_interface,
                     moveit::planning_interface::MoveGroupInterface &gripper_interface,
@@ -274,18 +249,14 @@ private:
                     double place_z_offset = 0.0)
   {
     const double SAFE_Z = 0.50;
-    // 현재 자세
     geometry_msgs::msg::Pose current_pose = arm_interface.getCurrentPose().pose;
     geometry_msgs::msg::Pose lift_pose = current_pose;
     lift_pose.position.z = SAFE_Z;
 
-    // 접근 자세 (슬롯 위 안전 높이)
     geometry_msgs::msg::Pose above_pose =
         list_to_pose(slot.location.x, slot.location.y, SAFE_Z,
                      M_PI, 0.0, yaw);
 
-    // 실제 놓을 위치의 자세
-    // slot.height는 case 바닥 기준 높이. 오브젝트 높이를 포함해 판 위에 놓이도록 설정
     geometry_msgs::msg::Pose place_pose =
         list_to_pose(slot.location.x, slot.location.y,
                      slot.height + object.height + 0.185 + place_z_offset,
@@ -295,31 +266,25 @@ private:
     std::vector<geometry_msgs::msg::Pose> waypoints2;
     std::vector<geometry_msgs::msg::Pose> waypoints_up;
 
-    // 0) 수직 상승하여 안전 높이 도달
     if (current_pose.position.z < SAFE_Z - 1e-3) {
       waypoints_up.clear();
       waypoints_up.push_back(lift_pose);
       waypoint_sample(arm_interface, node, waypoints_up);
     }
 
-    // 1) 같은 Z에서 슬롯 위로 수평 이동 (카르테시안)
     waypoints1.clear();
     waypoints1.push_back(above_pose);
     waypoint_sample(arm_interface, node, waypoints1);
-    // 1-2) 슬롯 위에서 수직 하강 (카르테시안)
     waypoints1.clear();
     waypoints1.push_back(place_pose);
     waypoint_sample(arm_interface, node, waypoints1, descend_time_scale);
 
-    // 2) 물체 내려놓기
     open_gripper(gripper_interface);
 
-    // 3) 다시 위로 올라가기
     waypoints2.push_back(above_pose);
     waypoint_sample(arm_interface, node, waypoints2);
   }
 
-  // 블록 1: box1 (0.40, 0.10)
   void block1(const rclcpp::Node::SharedPtr &node,
               moveit::planning_interface::MoveGroupInterface &arm_interface,
               moveit::planning_interface::MoveGroupInterface &gripper_interface)
@@ -332,7 +297,6 @@ private:
     place_object(node, arm_interface, gripper_interface, object, slot, yaw);
   }
 
-  // 블록 2: box2 (0.40, 0.00)
   void block2(const rclcpp::Node::SharedPtr &node,
               moveit::planning_interface::MoveGroupInterface &arm_interface,
               moveit::planning_interface::MoveGroupInterface &gripper_interface)
@@ -345,7 +309,6 @@ private:
     place_object(node, arm_interface, gripper_interface, object, slot, yaw);
   }
 
-  // 블록 3: box3 (0.40, -0.10) 얇은 Y(0.025)
   void block3(const rclcpp::Node::SharedPtr &node,
               moveit::planning_interface::MoveGroupInterface &arm_interface,
               moveit::planning_interface::MoveGroupInterface &gripper_interface)
@@ -360,7 +323,6 @@ private:
     place_object(node, arm_interface, gripper_interface, object, slot, yaw_adjusted_place);
   }
 
-  // 블록 4: box5 (0.50, 0.10) 높이 0.08
   void block4(const rclcpp::Node::SharedPtr &node,
               moveit::planning_interface::MoveGroupInterface &arm_interface,
               moveit::planning_interface::MoveGroupInterface &gripper_interface)
@@ -373,7 +335,6 @@ private:
     place_object(node, arm_interface, gripper_interface, object, slot, yaw);
   }
 
-  // 블록 5: cylinder (0.50, 0.00) r=0.025, h=0.06
   void block5(const rclcpp::Node::SharedPtr &node,
               moveit::planning_interface::MoveGroupInterface &arm_interface,
               moveit::planning_interface::MoveGroupInterface &gripper_interface)
@@ -386,7 +347,6 @@ private:
     place_object(node, arm_interface, gripper_interface, object, slot, yaw);
   }
 
-  // 블록 6: box4 (0.50, -0.10) 높이 0.07
   void block6(const rclcpp::Node::SharedPtr &node,
               moveit::planning_interface::MoveGroupInterface &arm_interface,
               moveit::planning_interface::MoveGroupInterface &gripper_interface)
@@ -399,7 +359,6 @@ private:
     place_object(node, arm_interface, gripper_interface, object, slot, yaw);
   }
 
-  // 블록 7: triangle (0.60, 0.10) 메쉬, 높이 0.06 가정
   void block7(const rclcpp::Node::SharedPtr &node,
               moveit::planning_interface::MoveGroupInterface &arm_interface,
               moveit::planning_interface::MoveGroupInterface &gripper_interface)
@@ -417,7 +376,6 @@ private:
     place_object(node, arm_interface, gripper_interface, object, place_slot, yaw_adjusted_place, 5.0, 0.015);
   }
 
-  // 블록 8: box6 (0.60, 0.00) 높이 0.09
   void block8(const rclcpp::Node::SharedPtr &node,
               moveit::planning_interface::MoveGroupInterface &arm_interface,
               moveit::planning_interface::MoveGroupInterface &gripper_interface)
