@@ -184,7 +184,7 @@ task_list = [
     ("box_2", objects["box_2"], (0.05, 0.38)),
     ("cylinder_0", objects["cylinder_0"], (-0.05, 0.27)),
     ("box_3", objects["box_3"], (-0.05, 0.38)),
-    ("box_0", objects["box_0"], (0.155, 0.36)),
+    ("box_0", objects["box_0"], (0.155, 0.365)),
     ("triangle", objects["triangle"], (0.06, 0.2625))
 ]
 
