@@ -41,7 +41,7 @@ case = p.createMultiBody(
     baseCollisionShapeIndex=case_collision,
     baseVisualShapeIndex=case_visual,
     basePosition=[0.0, 0.3, 0.63], 
-    baseOrientation=p.getQuaternionFromEuler([0, 0, np.pi]) # 방향 180도 회전
+    baseOrientation=p.getQuaternionFromEuler([0, 0, np.pi])
 )
 
 colors = {
@@ -54,24 +54,16 @@ for name, body_id in objects.items():
 
 p.resetDebugVisualizerCamera(cameraDistance=1.5, cameraYaw=45, cameraPitch=-30, cameraTargetPosition=[0.3, 0, 0.5])
 
-# ----------------------------------------------------------------
-# 1. 초기 설정 및 헬퍼 함수 정의
-# ----------------------------------------------------------------
-
-# Case 고정 (중력에 의해 떨어지거나 밀리지 않도록)
 p.createConstraint(case, -1, -1, -1, p.JOINT_FIXED, [0, 0, 0], [0, 0, 0],
                    p.getBasePositionAndOrientation(case)[0],
                    parentFrameOrientation=p.getBasePositionAndOrientation(case)[1])
 
-# 로봇 관절 인덱스 및 홈 포즈
 num_joints = p.getNumJoints(robot)
 arm_indices = [i for i in range(num_joints) if p.getJointInfo(robot, i)[2] == p.JOINT_REVOLUTE][:7]
 finger_indices = [9, 10]
 ee_index = 11
 home_pose = [0.0, -0.5, 0.0, -2.2, 0.0, 1.7, 0.8]
 base_orn = p.getQuaternionFromEuler([np.pi, 0.0, 0.0])
-
-# --- Helper Functions ---
 def step(seconds):
     for _ in range(int(seconds * 240)):
         p.stepSimulation()
@@ -103,23 +95,17 @@ def go_home():
     move_joints(home_pose)
     step(1.0)
 
-# ----------------------------------------------------------------
-# 2. 작업 수행 함수 (높이 관련 파라미터 업데이트)
-# ----------------------------------------------------------------
-
 def execute_block(name, body_id, target_xy):
     (min_x, min_y, min_z), (max_x, max_y, max_z) = p.getAABB(body_id)
     obj_pos, _ = p.getBasePositionAndOrientation(body_id)
     
     pick_xy = list(obj_pos[:2])
-    # Hover 높이도 살짝 조정
     hover_z = 0.85 
     pre_z = max_z + 0.01 
     
     pick_orn = base_orn
     place_orn = base_orn
     grasp_width = 0.0
-    # 물체를 잡는 높이 비율 조정 (테이블 높이가 변했으므로 절대좌표 대신 비율 사용이 안전)
     grasp_z_ratio = 0.55 
     
     if name == "triangle":
@@ -137,7 +123,6 @@ def execute_block(name, body_id, target_xy):
         
     grasp_z = min_z + (max_z - min_z) * grasp_z_ratio
     
-    # Pick Sequence
     move_cartesian([pick_xy[0], pick_xy[1], hover_z], pick_orn, duration=0.8)
     move_cartesian([pick_xy[0], pick_xy[1], pre_z], pick_orn, duration=0.8)
     move_cartesian([pick_xy[0], pick_xy[1], grasp_z], pick_orn, duration=0.5)
@@ -151,8 +136,6 @@ def execute_block(name, body_id, target_xy):
         curr_pos, _ = get_ee_pose()
         move_cartesian(curr_pos, place_orn, duration=0.5)
         
-    # Place Sequence
-    # Case 높이 기준으로 목표 높이 설정
     case_z = p.getBasePositionAndOrientation(case)[0][2]
     place_z = case_z + 0.065
     
@@ -169,14 +152,10 @@ def execute_block(name, body_id, target_xy):
         curr_pos, _ = get_ee_pose()
         move_cartesian(curr_pos, base_orn, duration=0.5)
 
-# ----------------------------------------------------------------
-# 3. 실행
-# ----------------------------------------------------------------
 go_home()
 control_gripper(0.04)
 step(1.0)
 
-# 딕셔너리에서 ID를 가져오도록 수정
 task_list = [
     ("box_4", objects["box_4"], (-0.16, 0.38)),
     ("box_5", objects["box_5"], (-0.15, 0.26)),
