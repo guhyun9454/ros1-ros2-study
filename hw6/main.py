@@ -10,19 +10,24 @@ p.setGravity(0, 0, -9.8)
 p.loadURDF("plane.urdf")
 table = p.loadURDF("table/table.urdf", [0.5, 0, 0], useFixedBase=True)
 
-robot = p.loadURDF("franka_panda/panda.urdf", basePosition=[0.0, 0, 0.625], useFixedBase=True)
+robot = p.loadURDF("franka_panda/panda.urdf", basePosition=[0.0, 0, 0.66], useFixedBase=True)
 
-object_z = 0.65 
+box_6 = p.loadURDF("models/box6.xacro", basePosition=[0.3, -0.1, 0.66])
+box_5 = p.loadURDF("models/box5.xacro", basePosition=[0.3, 0.0, 0.66])
+box_4 = p.loadURDF("models/box4.xacro", basePosition=[0.3, 0.1, 0.66])
 
-objects = {}
-objects["box_6"]    = p.loadURDF("models/box6.xacro", basePosition=[0.3, -0.1, object_z])
-objects["box_5"]    = p.loadURDF("models/box5.xacro", basePosition=[0.3, 0.0, object_z])
-objects["box_4"]    = p.loadURDF("models/box4.xacro", basePosition=[0.3, 0.1, object_z])
-objects["box_3"]    = p.loadURDF("models/box3.xacro", basePosition=[0.4, -0.1, object_z])
-objects["cylinder_0"] = p.loadURDF("models/cylinder1.xacro", basePosition=[0.4, 0.0, object_z])
-objects["box_2"]    = p.loadURDF("models/box2.xacro", basePosition=[0.4, 0.1, object_z])
-objects["box_0"]    = p.loadURDF("models/box.xacro", basePosition=[0.5, 0.0, object_z])
-objects["triangle"] = p.loadURDF("models/triangle.xacro", basePosition=[0.5, 0.1, object_z])
+box_3 = p.loadURDF("models/box3.xacro", basePosition=[0.4, -0.1, 0.66])
+cylinder_0 = p.loadURDF("models/cylinder1.xacro", basePosition=[0.4, 0.0, 0.66])
+box_2 = p.loadURDF("models/box2.xacro", basePosition=[0.4, 0.1, 0.66])
+
+box_0 = p.loadURDF("models/box.xacro", basePosition=[0.5, 0.0, 0.66])
+triangle = p.loadURDF("models/triangle.xacro", basePosition=[0.5, 0.1, 0.66])
+
+objects = {
+    "box_6": box_6, "box_5": box_5, "box_4": box_4,
+    "box_3": box_3, "cylinder_0": cylinder_0, "box_2": box_2,
+    "box_0": box_0, "triangle": triangle
+}
 
 case_collision = p.createCollisionShape(
     shapeType=p.GEOM_MESH,
@@ -40,23 +45,22 @@ case = p.createMultiBody(
     baseMass=0.05,
     baseCollisionShapeIndex=case_collision,
     baseVisualShapeIndex=case_visual,
-    basePosition=[0.0, 0.3, 0.63], 
-    baseOrientation=p.getQuaternionFromEuler([0, 0, np.pi])
+    basePosition=[0.0, 0.3, 0.64],
+    baseOrientation=p.getQuaternionFromEuler([0, 0, 3.14159])
 )
 
-colors = {
-    "box_6": [1, 0, 1, 1], "box_5": [1, 0, 0, 1], "box_4": [1, 0, 0, 1],
-    "box_3": [1, 0, 0, 1], "cylinder_0": [0, 0, 1, 1], "box_2": [1, 0, 0, 1],
-    "box_0": [1, 0, 0, 1], "triangle": [1, 0, 1, 1]
-}
-for name, body_id in objects.items():
-    p.changeVisualShape(body_id, -1, rgbaColor=colors[name])
+p.changeVisualShape(box_6, -1, rgbaColor=[1, 0, 1, 1])  # box
+p.changeVisualShape(box_5, -1, rgbaColor=[1, 0, 0, 1])  # box2
+p.changeVisualShape(box_4, -1, rgbaColor=[1, 0, 0, 1])  # box3
+
+p.changeVisualShape(box_3, -1, rgbaColor=[1, 0, 0, 1])  # box4
+p.changeVisualShape(cylinder_0, -1, rgbaColor=[0, 0, 1, 1])  # box5
+p.changeVisualShape(box_2, -1, rgbaColor=[1, 0, 0, 1])  # box6
+
+p.changeVisualShape(box_0, -1, rgbaColor=[1, 0, 0, 1])  # box5
+p.changeVisualShape(triangle, -1, rgbaColor=[1, 0, 1, 1])  # box6
 
 p.resetDebugVisualizerCamera(cameraDistance=1.5, cameraYaw=45, cameraPitch=-30, cameraTargetPosition=[0.3, 0, 0.5])
-
-p.createConstraint(case, -1, -1, -1, p.JOINT_FIXED, [0, 0, 0], [0, 0, 0],
-                   p.getBasePositionAndOrientation(case)[0],
-                   parentFrameOrientation=p.getBasePositionAndOrientation(case)[1])
 
 num_joints = p.getNumJoints(robot)
 arm_indices = [i for i in range(num_joints) if p.getJointInfo(robot, i)[2] == p.JOINT_REVOLUTE][:7]
