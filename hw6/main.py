@@ -186,6 +186,8 @@ task_list = [
     ("box_3", objects["box_3"], (-0.05, 0.38)),
     ("box_0", objects["box_0"], (0.155, 0.365)),
     ("triangle", objects["triangle"], (0.06, 0.2625))
+    ("box_4", objects["box_4"], (-0.16, 0.38)),
+    ("box_6", objects["box_6"], (0.17, 0.26)),
 ]
 
 for name, obj_id, target in task_list:
