@@ -178,16 +178,14 @@ step(1.0)
 
 # 딕셔너리에서 ID를 가져오도록 수정
 task_list = [
-    ("box_4", objects["box_4"], (-0.16, 0.4)),
+    ("box_4", objects["box_4"], (-0.16, 0.38)),
     ("box_5", objects["box_5"], (-0.15, 0.26)),
-    ("box_6", objects["box_6"], (0.16, 0.26)),
-    ("box_2", objects["box_2"], (0.05, 0.4)),
+    ("box_6", objects["box_6"], (0.17, 0.26)),
+    ("box_2", objects["box_2"], (0.05, 0.38)),
     ("cylinder_0", objects["cylinder_0"], (-0.05, 0.27)),
     ("box_3", objects["box_3"], (-0.05, 0.38)),
-    ("box_0", objects["box_0"], (0.155, 0.365)),
+    ("box_0", objects["box_0"], (0.155, 0.36)),
     ("triangle", objects["triangle"], (0.06, 0.2625))
-    ("box_4", objects["box_4"], (-0.16, 0.38)),
-    ("box_6", objects["box_6"], (0.17, 0.26)),
 ]
 
 for name, obj_id, target in task_list:
